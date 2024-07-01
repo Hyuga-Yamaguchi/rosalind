@@ -1,0 +1,2 @@
+{:paths [:clj-paths]
+ :aliases {:clj-paths ["src"]}}
