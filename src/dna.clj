@@ -14,6 +14,4 @@
             (nucleotide-count freq \G)
             (nucleotide-count freq \T))))
 
-(-> (read-file "dna.txt")
-    dna
-    (output-file "dna.txt"))
+(rosalind-solve)

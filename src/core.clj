@@ -1,4 +1,5 @@
-(ns core)
+(ns core
+  (:require [clojure.java.io :as io]))
 
 (defn read-file
   [filename]
@@ -9,8 +10,11 @@
   (spit (str "output/" filename) output))
 
 (defn rosalind-solve
-  [func]
-  (let [file (str func ".txt")]
+  []
+  (let [download_path (str (System/getProperty "user.home") "/Downloads")
+        file (str *ns* ".txt")
+        rosalind_file (str download_path "/rosalind_" file)]
+    (io/copy (io/file rosalind_file) (io/file (str "input/" file)))
     (-> (read-file file)
-        func
+        ((ns-resolve *ns* (symbol (str *ns*))))
         (output-file file))))
