@@ -1,5 +1,6 @@
 (ns fib
-  (:require [core :refer [rosalind-solve]]))
+  (:require [core :refer [rosalind-solve]]
+            [clojure.string :as string]))
 
 ;; f_0 = 0
 ;; f_1 = 1
@@ -7,7 +8,7 @@
 
 (defn fib
   [xs]
-  (let [[n k] (map #(Long/parseLong %) (clojure.string/split xs #"\s"))]
+  (let [[n k] (map #(Long/parseLong %) (string/split xs #"\s"))]
     (->> [0 1]
          (iterate (fn [[a b]] [(+ a b) (* k a)]))
          (take (inc n))
