@@ -29,7 +29,7 @@
         gc-rates (into {} (map (fn [[k v]] {k (calc-gc-rate v)}) fasta))
         max-gc-rate (apply max-key val gc-rates)
         id (-> max-gc-rate first name)
-        gc-rate (last max-gc-rate)]
+        gc-rate (* 100 (last max-gc-rate))]
     (str id "\n" gc-rate)))
 
 (rosalind-solve)
