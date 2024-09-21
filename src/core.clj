@@ -1,5 +1,6 @@
 (ns core
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 (defn read-file
   [filename]
@@ -18,6 +19,21 @@
     (-> (read-file file)
         ((ns-resolve *ns* (symbol (str *ns*))))
         (output-file file))))
+
+(defn split-by-char
+  [xs char]
+  (let [parts (string/split xs (re-pattern (str "\\" char)))]
+    (filter (complement empty?) parts)))
+
+(defn parse-fasta
+  [fasta-sting]
+  (let [entries (split-by-char fasta-sting \>)
+        process-entry (fn [entry]
+                        (let [lines (string/split-lines entry)
+                              label (keyword (first lines))
+                              sequence (apply str (rest lines))]
+                          {label sequence}))]
+    (apply merge (map process-entry entries))))
 
 (def rna-codon-table
   {"UUU" "F", "UUC" "F", "UUA" "L", "UUG" "L",
