@@ -22,18 +22,19 @@
 
 (defn split-by-char
   [xs char]
-  (let [parts (string/split xs (re-pattern (str "\\" char)))]
-    (filter (complement empty?) parts)))
+  (->> (string/split xs (re-pattern (str "\\" char)))
+       (filter seq)))
+
+(defn trim-space
+  [xs]
+  (string/replace xs #"[ \t]+" ""))
 
 (defn parse-fasta
   [fasta-sting]
-  (let [entries (split-by-char fasta-sting \>)
-        process-entry (fn [entry]
-                        (let [lines (string/split-lines entry)
-                              label (keyword (first lines))
-                              sequence (apply str (rest lines))]
-                          {label sequence}))]
-    (apply merge (map process-entry entries))))
+  (->> (split-by-char fasta-sting \>)
+       (map (fn [entry]
+              (let [[label & seq-lines] (string/split-lines (trim-space entry))]
+                [label (apply str seq-lines)])))))
 
 (def rna-codon-table
   {"UUU" "F", "UUC" "F", "UUA" "L", "UUG" "L",

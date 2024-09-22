@@ -4,45 +4,35 @@
 
 (defn partition-codon
   [s start]
-  (->> s
-       (drop start)
+  (->> (drop start s)
        (partition 3)
        (map #(apply str %))))
 
 (defn rna
   [s]
-  (->> s
-       (map {\A \A \T \U \G \G \C \C})
-       (apply str)))
+  (apply str (map {\A \A \T \U \G \G \C \C} s)))
 
 (defn revc
   [s]
-  (->> s
-       reverse
-       (map {\A \T \T \A \G \C \C \G})
-       (apply str)))
+  (apply str (map {\A \T \T \A \G \C \C \G} (reverse s))))
 
 (defn get-orf
   [codon]
-  (let [indices (keep-indexed (fn [idx v] (when (= v "M") idx)) codon)]
-    (->> indices
-         (map (fn [idx] (take-while #(not= "" %) (drop idx codon))))
-         (filter #(not= "x" (last %)))
-         (mapv #(apply str %)))))
+  (->> (keep-indexed (fn [idx v] (when (= v "M") idx)) codon)
+       (map (fn [idx]
+              (take-while #(not= "" %) (drop idx codon))))
+       (filter #(not= "x" (last %)))
+       (mapv #(apply str %))))
 
 (defn orf
   [xs]
-  (let [s (->> xs parse-fasta vals first)
-        rnas (mapcat
-              (fn [f]
-                (map #(-> s f rna (partition-codon %)) (range 3)))
+  (let [fasta (->> xs parse-fasta (map last) first)
+        rnas (mapcat (fn [f] (map #(-> fasta f rna (partition-codon %)) (range 3)))
               [identity revc])
-        codons (map
-                (fn [rs]
-                  (conj (mapv #(get rna-codon-table %) rs) "x"))
-                rnas)]
-    (string/join "\n" (->> codons
-                           (mapcat get-orf)
-                           set))))
+        codons (mapv #(conj (mapv rna-codon-table %) "x") rnas)]
+    (->> codons
+         (mapcat get-orf)
+         set
+         (string/join "\n"))))
 
 (rosalind-solve)

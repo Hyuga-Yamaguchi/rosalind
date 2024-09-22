@@ -4,17 +4,16 @@
 
 (defn cons
   [xs]
-  (let [s (->> xs parse-fasta)
+  (let [s (parse-fasta xs)
         freq (->> s
-                  vals
-                  (map #(partition 1 %))
+                  (map last)
                   (apply map vector)
-                  (map flatten)
                   (map frequencies))
         consensus (->> freq
-                       (map #(key (apply max-key val %)))
+                       (map #(-> (apply max-key val %) key))
                        (apply str))
-        output (fn [nuc] (str nuc ": " (string/join " " (map #(get % nuc 0) freq))))]
+        output (fn [nuc]
+                 (str nuc ": " (string/join " " (map #(get % nuc 0) freq))))]
     (string/join "\n" (clojure.core/cons consensus (map output [\A \C \G \T])))))
 
 (rosalind-solve)
