@@ -10,23 +10,18 @@
   (let [children [(str (first f) (first m))
                   (str (first f) (second m))
                   (str (second f) (first m))
-                  (str (second f) (second m))]
-        recessive "aa"]
-    {(str f m) (/ (count (filter #(not= recessive %) children)) 2)}))
+                  (str (second f) (second m))]]
+    (double (/ (count (remove #{"aa"} children)) 2))))
 
 (def expected-dominant
-  (->> genotype-list
-       (map #(partition 2 %))
-       (map (fn [pair] (map #(apply str %) pair)))
-       (map calc-expected-dominant)
-       (into {})))
+  (into {} (for [g genotype-list]
+             {g (calc-expected-dominant (partition 2 g))})))
 
 (defn iev
   [xs]
-  (let [genotype (zipmap genotype-list (map #(Integer/parseInt %) (string/split (string/trim-newline xs) #" ")))]
+  (let [genotype (zipmap genotype-list (map #(Long/parseLong %) (string/split (string/trim-newline xs) #" ")))]
     (->> genotype
          (map (fn [[k v]] (* v (get expected-dominant k))))
-         (reduce +)
-         double)))
+         (reduce +))))
 
 (rosalind-solve)

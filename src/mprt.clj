@@ -3,7 +3,6 @@
             [clj-http.client :as client]
             [clojure.string :as string]))
 
-
 (defn get-fasta
   [id]
   (let [id (-> id (string/split #"_") first)
