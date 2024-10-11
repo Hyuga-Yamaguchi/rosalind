@@ -1,62 +1,44 @@
 (ns long
   (:require [core :refer [rosalind-solve parse-fasta]]
             [clojure.string :as string]
-            [clojure.set :as cset]))
+            [clojure.set :refer [difference]]))
 
-;; リードのオーバーラップを計算する
-;; オーバーラップの最大を持つペアを結合し、繰り返す
-;; 全てのリードが1つのsuperstringに結合されるまで続ける]
+(defn overlap [s1 s2] ;; s1 の後ろに s2 がくっつく
+  (let [half-len (quot (min (count s1) (count s2)) 2)]
+    (or (some->> (range (inc half-len) (inc (count s2)))
+                 (filter #(string/ends-with? s1 (subs s2 0 %)))
+                 last)
+         0)))
 
-(defn prefix-list
-  [s]
-  (map #(subs s 0 %) (range 1 (inc (count s)))))
+(defn find-start-idx
+  [pairs l]
+  (first (difference (set (range l))
+                     (set (map second pairs)))))
 
-(defn suffix-list
-  [s]
-  (map #(subs s % (count s)) (range 0 (count s))))
+(defn join-indexes
+  [pairs]
+  (let [dnas-num (count pairs)
+        start-idx (find-start-idx pairs dnas-num)]
+    (loop [cur-idx start-idx result [start-idx]]
+      (if-let [next-idx (second (nth pairs cur-idx))]
+        (recur next-idx (conj result next-idx))
+        result))))
 
-(defn join-string
-  [s t overlap-cache]
-  (if-let [cached (get overlap-cache [s t])]
-    cached
-    (let [substrings (cset/intersection (set (prefix-list s)) (set (suffix-list t)))]
-      (if (seq substrings)
-        (let [long-string (apply max-key count substrings)
-              result (str t (subs s (count long-string)))]
-          [result (assoc overlap-cache [s t] result)])
-        [(str t s) (assoc overlap-cache [s t] (str t s))]))))
-
-(defn overlap-string
-  [s t overlap-cache]
-  (if (string/includes? t s)
-    [t overlap-cache]
-    (let [[res1 cache1] (join-string s t overlap-cache)
-          [res2 cache2] (join-string t s cache1)]
-      [(min-key count res1 res2) cache2])))
-
-(defn min-superstring
-  [coll overlap-cache]
-  (reduce
-   (fn [[best-s1 best-s2 best-os cache] [s1 s2]]
-     (let [[overlap cache'] (overlap-string s1 s2 cache)]
-       (if (< (count overlap) (count best-os))
-         [s1 s2 overlap cache']
-         [best-s1 best-s2 best-os cache])))
-   [(first coll) (second coll) (overlap-string (first coll) (second coll) overlap-cache) overlap-cache]
-   (for [i (range (count coll))
-         j (range (inc i) (count coll))]
-     [(nth coll i) (nth coll j)])))
-
-(defn super-string
-  [coll]
-  (if (= 1 (count coll))
-    (first coll)
-    (let [[[s1 s2 os] overlap-cache] (min-superstring coll {})]
-      (super-string (conj (remove (hash-set s1 s2) coll) os)))))
+(defn merge-strings [s1 s2 overlap-len]
+  (str s1 (subs s2 overlap-len)))
 
 (defn long
   [xs]
-  (let [dnas (->> xs parse-fasta (map #(last %)))]
-    (super-string dnas)))
+  (let [dnas (->> xs parse-fasta (map last) vec)
+        indexed-dnas (map-indexed vector dnas)]
+    (->> indexed-dnas
+         (map (fn [[idx1 dna1]]
+                [idx1 (ffirst (for [[idx2 dna2] indexed-dnas
+                                    :when (and (not= idx1 idx2)
+                                               (>= (overlap dna1 dna2) 1))]
+                                [idx2]))]))
+         join-indexes
+         (map dnas)
+         (reduce (fn [s1 s2] (merge-strings s1 s2 (overlap s1 s2))) ""))))
 
 (rosalind-solve)
