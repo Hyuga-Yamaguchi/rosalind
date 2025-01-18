@@ -1,5 +1,26 @@
-(ns kmp)
+(ns kmp
+  (:require [core :refer [rosalind-solve parse-fasta]]
+            [clojure.string :as string]))
 
-;; 初期条件 P_0 = 0
-;; 前から探索していき、先頭の文字と一致した場合、一致モードに入り、+1
-;; 一致モードに入ってから、次の文字を
+(defn failure-array
+  [t]
+  (let [n (count t)]
+    (loop [table (vec (concat [-1] (repeat (dec n) 0)))
+           j -1
+           i 0]
+      (if (<= i (dec n))
+        (let [j (loop [j j]
+                  (if (and (>= j 0) (not= (nth t i) (nth t j)))
+                    (recur (get table j))
+                    j))]
+          (recur (assoc table (inc i) (inc j))
+                 (inc j)
+                 (inc i)))
+        table))))
+
+(defn kmp
+  [xs]
+  (let [[_ dna] (->> xs parse-fasta first)]
+    (string/join #" " (rest (failure-array dna)))))
+
+(rosalind-solve)
